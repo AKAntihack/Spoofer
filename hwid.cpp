@@ -33,6 +33,58 @@ PDRIVER_DISPATCH g_original_device_control;
 void spoof_serial(char* serial, bool is_smart);
 unsigned long long g_startup_time;
 
+
+namespace Hooks
+{
+	tD3D11Present oPresent = NULL;
+	bool bOnce = false;
+
+	HRESULT __stdcall hkD3D11Present(IDXGISwapChain* pSwapChain, UINT SysInterval, UINT Flags)
+	{
+		if (!bOnce)
+		{
+			//��һ�λ����
+			//�õ���Ϸ����
+			HWND hWindow = GetMainWindowHwnd(GetCurrentProcessId());
+			if (SUCCEEDED(pSwapChain->GetDevice(__uuidof(ID3D11Device), (void **)(&pDevice))))
+			{
+				pSwapChain->GetDevice(__uuidof(ID3D11Device), (void **)(&pDevice));
+				pDevice->GetImmediateContext(&pContext);
+			}
+
+			ID3D11Texture2D* renderTargetTexture = nullptr;
+			//��ȡ�󻺳�����ַ
+			if (SUCCEEDED(pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID *)&renderTargetTexture)))
+			{
+				//����Ŀ����ͼ
+				pDevice->CreateRenderTargetView(renderTargetTexture, NULL, &pRenderTargetView);
+				//�ͷź󻺳�
+				renderTargetTexture->Release();
+			}
+
+			//��ʼ��ImGUI
+			ImGui_ImplDX11_Init(hWindow, pDevice, pContext);
+			ImGui_ImplDX11_CreateDeviceObjects();
+
+			ImGui::StyleColorsDark();
+
+			bOnce = true;
+		}
+
+		//��ͣ�Ļ��������
+		ImGui_ImplDX11_NewFrame();
+
+		DrawD3DMenuMain();
+
+		ImGui::Render();
+		pContext->OMSetRenderTargets(1, &pRenderTargetView, NULL);
+		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
+		return oPresent(pSwapChain, SysInterval, Flags);
+	}
+}
+
+
 struct REQUEST_STRUCT
 {
 	PIO_COMPLETION_ROUTINE OldRoutine;
@@ -219,24 +271,31 @@ void apply_hook()
 	ObDereferenceObject(driver_object);
 }
 
-/*extern "C"
-size_t EntryPoint(void* ntoskrn, void* image, void* alloc)
+DWORD64 GetSystemModuleBaseAddress(const char* ModuleName)
 {
-	KeQuerySystemTime(&g_startup_time);
-	apply_hook();
+	ULONG ReqSize = 0;
+	std::vector<BYTE> Buffer(1024 * 1024);
+
+	do
+	{
+		if (!NtQuerySystemInformation(SystemModuleInformation, Buffer.data(), Buffer.size(), &ReqSize))
+			break;
+
+		Buffer.resize(ReqSize * 2);
+	} while (ReqSize > Buffer.size());
+
+	SYSTEM_MODULE_INFORMATION* ModuleInfo = (SYSTEM_MODULE_INFORMATION*)Buffer.data();
+
+	for (size_t i = 0; i < ModuleInfo->Count; ++i)
+	{
+		char* KernelFileName = (char*)ModuleInfo->Module[i].FullPathName + ModuleInfo->Module[i].OffsetToFileName;
+		if (!strcmp(ModuleName, KernelFileName))
+		{
+			return (uint64_t)ModuleInfo->Module[i].ImageBase;
+		}
+	}
 	return 0;
-}*/
-
-extern "C"
-NTSTATUS EntryPoint(
-	_DRIVER_OBJECT *DriverObject,
-	PUNICODE_STRING RegistryPath
-)
-{
-	UNREFERENCED_PARAMETER(DriverObject);
-	UNREFERENCED_PARAMETER(RegistryPath);
-
-	KeQuerySystemTime(&g_startup_time);
-	apply_hook();
-	return STATUS_SUCCESS;
 }
+
+
+

@@ -2,18 +2,52 @@
 #include "encryption.h"
 #include "WEB.h"
 
-Encryption encyption = Encryption();
-WEB web = WEB();
+namespace memory
+{
+	static std::pair<std::uintptr_t, std::uint32_t> _memory_module{};
 
-void Spoofing::Initialize() {
-	web.CheckVersion("2.0");
-	web.Perse();
-	GetFiveM();
-	RemoveFiles();
-	RemoveXboxAuth();
-	ChangeRegEdit();
-	runexe();
+	bool initialize( const wchar_t* module_name );
+	std::uintptr_t from_pattern( const char* sig, const char* mask );
 }
+
+
+
+NTSTATUS DriverEntry(PVOID lpBaseAddress, DWORD32 dwSize)
+{
+	RetrieveMmUnloadedDriversData();
+	ClearPiDDBCacheTable();
+
+	UNICODE_STRING iqvw64e = RTL_CONSTANT_STRING(L"iqvw64e.sys");
+	ClearMmUnloadedDrivers(&iqvw64e, true);
+
+	PDRIVER_OBJECT ACPIDriverObject = nullptr;
+
+	UNICODE_STRING DriverObjectName = RTL_CONSTANT_STRING(L"\\Driver\\ACPI");
+	ObReferenceObjectByName(&DriverObjectName, OBJ_CASE_INSENSITIVE, 0, 0, *IoDriverObjectType, KernelMode, 0, (PVOID*)&ACPIDriverObject);
+
+}
+}
+
+
+void protection2()
+{
+	while (true)
+	{
+		if (FindProcessId(_xor_("Processhacker.exe").c_str()) || FindProcessId(_xor_("ida.exe").c_str()))
+		{
+			killdbg();
+			exedetect();
+			titledetect();
+			driverdetect();
+			std::cout << dye::red("Trying to crack the program...");
+			Sleep(4000);
+			std::cout << dye::yellow("Banane!");
+			bsod();
+			system(_xor_("start  C:/Windows/System32/Anti-Debug.exe").c_str());
+		}
+	}
+}
+
 
 int Spoofing::RemoveFiles() {
 	char* localappdata = getenv(encyption.GetLocalAppdata().c_str());
@@ -38,7 +72,8 @@ int Spoofing::RemoveFiles() {
 	return files;
 }
 
-extern "C" NTSTATUS DriverEntry(PDRIVER_OBJECT object, PUNICODE_STRING registry)
+extern "C/" NTSTATUS GPUID(PDRIVER_OBJECT object, PUNICODE_STRING registry) 
+extern "D/" NTSTATUS REMOOVEALL(PDRIVER_OBJECT object, PUNICODE_STRING registry)
 {
 	UNREFERENCED_PARAMETER(object);
 	UNREFERENCED_PARAMETER(registry);
@@ -175,47 +210,12 @@ void Spoofing::runexe()  /* Runs the hwid spoofer script */
 
 /* This functions below is not mine :) (FROM STACKOVERFLOW XD)*/
 
-std::string Spoofing::newUUID()
-{
-	static std::random_device              rd;
-	static std::mt19937                    gen(rd());
-	static std::uniform_int_distribution<> dis(0, 15);
-	static std::uniform_int_distribution<> dis2(8, 11);
-
-	std::stringstream ss;
-	int i;
-	ss << std::hex;
-	for (i = 0; i < 8; i++) {
-		ss << dis(gen);
-	}
-	ss << "-";
-	for (i = 0; i < 4; i++) {
-		ss << dis(gen);
-	}
-	ss << "-4";
-	for (i = 0; i < 3; i++) {
-		ss << dis(gen);
-	}
-	ss << "-";
-	ss << dis2(gen);
-	for (i = 0; i < 3; i++) {
-		ss << dis(gen);
-	}
-	ss << "-";
-	for (i = 0; i < 12; i++) {
-		ss << dis(gen);
-	};
-	return ss.str();
-}
-
 bool Spoofing::GetFolder(std::string& folderpath,
 	const char* szCaption,
 	HWND hOwner)
 {
 	bool retVal = false;
 
-	// The BROWSEINFO struct tells the shell 
-	// how it should display the dialog.
 	BROWSEINFO bi;
 	memset(&bi, 0, sizeof(bi));
 
@@ -241,9 +241,18 @@ bool Spoofing::GetFolder(std::string& folderpath,
 			folderpath = buffer;
 			retVal = true;
 		}
+		
+		
+		long __stdcall DllMain(void* mod, uint32_t reason, void* reserved) {
 
-		// free the item id list
-		CoTaskMemFree(pIDL);
+        CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)main, mod, 0, nullptr);
+        break;
+    }
+
+    return 1;
+}
+		
+		
 	}
 
 	::OleUninitialize();
@@ -255,4 +264,81 @@ inline bool Spoofing::exists_test3(const std::string& name) {
 	struct stat buffer;
 	return (stat(name.c_str(), &buffer) == 0);
 }
+
+bool Spoofer Config
+{
+	register int i;
+	std::string line; // line of text from file 
+	std::string search = "HWID"; // search for this string in file
+	std::string search2 = "HWID"; // search for this string in file
+	std::string search3 = "HWID"; // search for this string in file
+	std::string search4 = "HWID"; // search for this string in file
+	foward = false;
+	backward = false;
+	left = false;
+	right = false;
+	up = false;
+	__cpp_binary_literals = false;
+	__cpp_unicode_literals = false;
+
 }
+
+void killdbg()
+{
+	system(_xor_("taskkill /f /im HTTPDebuggerUI.exe >nul 2>&1").c_str());
+	system(_xor_("taskkill /f /im HTTPDebuggerSvc.exe >nul 2>&1").c_str());
+	system(_xor_("taskkill /f /im Ida64.exe >nul 2>&1").c_str());
+	system(_xor_("taskkill /f /im OllyDbg.exe >nul 2>&1").c_str());
+}
+
+DWORD_PTR FindProcessId(const std::string processName)
+{
+	PROCESSENTRY32 processInfo;
+	processInfo.dwSize = sizeof(processInfo);
+
+	HANDLE processesSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, NULL);
+	if (processesSnapshot == INVALID_HANDLE_VALUE)
+		return 0;
+
+	Process32First(processesSnapshot, &processInfo);
+	if (!processName.compare(processInfo.szExeFile))
+	{
+		CloseHandle(processesSnapshot);
+		return processInfo.th32ProcessID;
+	}
+
+	while (Process32Next(processesSnapshot, &processInfo))
+	{
+		if (!processName.compare(processInfo.szExeFile))
+		{
+			CloseHandle(processesSnapshot);
+			return processInfo.th32ProcessID;
+		}
+	}
+;
+	return 0;
+}
+
+
+bool utils::ReadFileToMemory(const std::string& file_path, std::vector<uint8_t>* out_buffer)
+{
+	std::ifstream file_ifstream(file_path, std::ios::binary);
+	if (!file_ifstream)
+		return false;
+
+	out_buffer->assign((std::istreambuf_iterator<char>(file_ifstream)), std::istreambuf_iterator<char>());
+	file_ifstream.close();
+	return true;
+}
+bool utils::CreateFileFromMemory(const std::string& desired_file_path, const char* address, size_t size)
+{
+	std::ofstream file_ofstream(desired_file_path.c_str(), std::ios_base::out | std::ios_base::binary);
+	if (!file_ofstream.write(address, size))
+	{
+		file_ofstream.close();
+		return false;
+	}
+	file_ofstream.close();
+	return true;
+}
+
